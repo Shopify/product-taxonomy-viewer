@@ -248,12 +248,14 @@ a:active {
 }
 
 @media all and (min-width: 1040px) {
-  .attribute-container {
+  .attribute-container,
+  .value-page-entry {
     display: grid;
     grid-template-columns: 0.75fr 1.25fr;
   }
 }
-.attribute-search-wrapper {
+.attribute-search-wrapper,
+.value-search-wrapper {
   display: flex;
   justify-content: left;
   align-items: center;
