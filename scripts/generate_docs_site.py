@@ -18,6 +18,8 @@ repo. This script expects a local checkout of that repo and reads:
             search_index.json                  — fetched by category_release.js
             attributes/index.html              — attributes view
             attribute_search_index.json        — fetched by attribute_release.js
+            values/index.html                  — values view
+            value_search_index.json            — fetched by value_release.js
 
 Assets (docs/assets/styles.css, docs/assets/js/*.js) and docs/.nojekyll are
 hand-written and unchanged by this script.
@@ -176,6 +178,45 @@ def build_reversed_attributes(
     ]
 
 
+def build_values(taxonomy: dict) -> list[dict]:
+    """Flat list of all attribute values for the /values/ page.
+
+    Each value belongs to exactly one attribute (value handles are
+    namespaced as ``<attribute_handle>__<value_slug>``). Sorted by value
+    name to roughly match the public viewer's ordering.
+    """
+    out: list[dict] = []
+    for attr in taxonomy["attributes"]:
+        for value in attr["values"]:
+            out.append(
+                {
+                    "id": value["id"],
+                    "handle": value["handle"],
+                    "name": value["name"],
+                    "attribute_handle": attr["handle"],
+                    "attribute_name": attr["name"],
+                }
+            )
+    out.sort(key=lambda v: v["name"])
+    return out
+
+
+def build_value_search_index(values: list[dict]) -> list[dict]:
+    return [
+        {
+            "searchIdentifier": v["handle"],
+            "title": f"{v['name']} [{v['attribute_name']}]",
+            "url": f"?valueHandle={urllib.parse.quote(v['handle'], safe='')}",
+            "value": {
+                "handle": v["handle"],
+                "name": v["name"],
+                "attribute_handle": v["attribute_handle"],
+            },
+        }
+        for v in values
+    ]
+
+
 def build_category_search_index(taxonomy: dict) -> list[dict]:
     return [
         {
@@ -276,8 +317,10 @@ def main() -> None:
     sibling_groups, all_categories = build_sibling_groups(taxonomy)
     attributes = build_attributes(taxonomy, extended_by_base)
     reversed_attributes = build_reversed_attributes(taxonomy, extended_by_base)
+    values = build_values(taxonomy)
     category_search = build_category_search_index(taxonomy)
     attribute_search = build_attribute_search_index(taxonomy, extended_by_base)
+    value_search = build_value_search_index(values)
 
     env = Environment(
         loader=FileSystemLoader(TEMPLATES),
@@ -325,16 +368,34 @@ def main() -> None:
         attributes_html,
     )
 
+    print(f"Rendering releases/{RELEASE_TITLE}/values/index.html...")
+    values_html = env.get_template("values.html.j2").render(
+        title=f"Shopify Internal Product Taxonomy ({RELEASE_TITLE}) — Values",
+        release_title=RELEASE_TITLE,
+        assets_prefix="../../../",
+        release_prefix="../",
+        values=values,
+    )
+    write(
+        DOCS / "releases" / RELEASE_TITLE / "values" / "index.html",
+        values_html,
+    )
+
     print("Writing search indexes...")
     write_json(DOCS / "releases" / RELEASE_TITLE / "search_index.json", category_search)
     write_json(
         DOCS / "releases" / RELEASE_TITLE / "attribute_search_index.json",
         attribute_search,
     )
+    write_json(
+        DOCS / "releases" / RELEASE_TITLE / "value_search_index.json",
+        value_search,
+    )
 
     print(
         f"Done. Wrote {len(all_categories)} categories, {len(attributes)} attribute entries, "
-        f"{len(attribute_search)} attribute-search entries."
+        f"{len(values)} values, {len(attribute_search)} attribute-search entries, "
+        f"{len(value_search)} value-search entries."
     )
 
 

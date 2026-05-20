@@ -40,8 +40,10 @@ This regenerates:
 - `docs/index.html` — landing page.
 - `docs/releases/unstable/index.html` — categories view (pre-rendered, ~27MB).
 - `docs/releases/unstable/attributes/index.html` — attributes view (~38MB).
+- `docs/releases/unstable/values/index.html` — values view.
 - `docs/releases/unstable/search_index.json` — fuse.js category index.
 - `docs/releases/unstable/attribute_search_index.json` — fuse.js attribute index.
+- `docs/releases/unstable/value_search_index.json` — fuse.js value index.
 
 The Jinja2 templates live in [`scripts/site_templates/`](../scripts/site_templates/).
 The shared assets (`docs/assets/styles.css`, `docs/assets/js/*.js`) are
